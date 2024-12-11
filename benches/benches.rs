@@ -2,13 +2,15 @@
 extern crate criterion;
 extern crate typed_generational_arena;
 
-use criterion::{Criterion, ParameterizedBenchmark, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput};
 use typed_generational_arena::{Arena, Index};
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct Small(usize);
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct Big([usize; 32]);
 
 fn insert<T: Default>(n: usize) {
@@ -32,91 +34,83 @@ fn collect<T>(arena: &Arena<T>, n: usize) {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "insert-small",
-            |b, n| b.iter(|| insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "insert-big",
-            |b, n| b.iter(|| insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "lookup-small",
-            |b, n| {
-                let mut small_arena = Arena::<Small>::new();
-                for _ in 0..1024 {
-                    small_arena.insert(Default::default());
-                }
-                let small_idx = small_arena.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| lookup(&small_arena, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_arena = Arena::<Small>::new();
+            for _ in 0..1024 {
+                small_arena.insert(Default::default());
+            }
+            let small_idx = small_arena.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| lookup(&small_arena, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "lookup-big",
-            |b, n| {
-                let mut big_arena = Arena::<Big>::new();
-                for _ in 0..1024 {
-                    big_arena.insert(Default::default());
-                }
-                let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| lookup(&big_arena, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_arena = Arena::<Big>::new();
+            for _ in 0..1024 {
+                big_arena.insert(Default::default());
+            }
+            let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| lookup(&big_arena, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "collect-small",
-            |b, n| {
-                let mut small_arena = Arena::<Small>::new();
-                for _ in 0..1024 {
-                    small_arena.insert(Default::default());
-                }
-                b.iter(|| collect(&small_arena, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_arena = Arena::<Small>::new();
+            for _ in 0..1024 {
+                small_arena.insert(Default::default());
+            }
+            b.iter(|| collect(&small_arena, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "collect-big",
-            |b, n| {
-                let mut big_arena = Arena::<Big>::new();
-                for _ in 0..1024 {
-                    big_arena.insert(Default::default());
-                }
-                b.iter(|| collect(&big_arena, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_arena = Arena::<Big>::new();
+            for _ in 0..1024 {
+                big_arena.insert(Default::default());
+            }
+            b.iter(|| collect(&big_arena, *n))
+        });
+    }
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

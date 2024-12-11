@@ -189,8 +189,8 @@ enum Entry<T> {
 mod delegate_untyped_index {
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Index {
-        pub index : usize,
-        pub generation : u64
+        pub index: usize,
+        pub generation: u64,
     }
 }
 
@@ -211,27 +211,36 @@ mod delegate_untyped_index {
 pub struct Index<T> {
     index: usize,
     generation: u64,
-    _phantom: core::marker::PhantomData<fn() -> T>
+    _phantom: core::marker::PhantomData<fn() -> T>,
 }
 impl<T> Index<T> {
     #[inline]
-    pub(self) fn new(index : usize, generation : u64) -> Index<T> {
-        Index{ index : index, generation : generation, _phantom : std::marker::PhantomData }
+    pub(self) fn new(index: usize, generation: u64) -> Index<T> {
+        Index {
+            index: index,
+            generation: generation,
+            _phantom: std::marker::PhantomData,
+        }
     }
     #[inline]
     pub(self) fn as_untyped(&self) -> delegate_untyped_index::Index {
-        delegate_untyped_index::Index{ index : self.index, generation : self.generation }
+        delegate_untyped_index::Index {
+            index: self.index,
+            generation: self.generation,
+        }
     }
 }
 impl<T> Clone for Index<T> {
     #[inline]
-    fn clone(&self) -> Index<T> { Index::new(self.index, self.generation) }
+    fn clone(&self) -> Index<T> {
+        Index::new(self.index, self.generation)
+    }
 }
 impl<T> Copy for Index<T> {}
 
 impl<T> PartialEq for Index<T> {
     #[inline]
-    fn eq(&self, other : &Self) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.as_untyped().eq(&other.as_untyped())
     }
 }
@@ -239,42 +248,42 @@ impl<T> PartialEq for Index<T> {
 impl<T> Eq for Index<T> {}
 impl<T> PartialOrd for Index<T> {
     #[inline]
-    fn partial_cmp(&self, other : &Self) -> Option<core::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         self.as_untyped().partial_cmp(&other.as_untyped())
     }
     #[inline]
-    fn lt(&self, other : &Self) -> bool {
+    fn lt(&self, other: &Self) -> bool {
         self.as_untyped().lt(&other.as_untyped())
     }
     #[inline]
-    fn le(&self, other : &Self) -> bool {
+    fn le(&self, other: &Self) -> bool {
         self.as_untyped().le(&other.as_untyped())
     }
     #[inline]
-    fn gt(&self, other : &Self) -> bool {
+    fn gt(&self, other: &Self) -> bool {
         self.as_untyped().gt(&other.as_untyped())
     }
     #[inline]
-    fn ge(&self, other : &Self) -> bool {
+    fn ge(&self, other: &Self) -> bool {
         self.as_untyped().ge(&other.as_untyped())
     }
 }
 
 impl<T> Ord for Index<T> {
-    fn cmp(&self, other : &Self) -> core::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         self.as_untyped().cmp(&other.as_untyped())
     }
 }
 
 impl<T> core::hash::Hash for Index<T> {
     #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state : &mut H) {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.as_untyped().hash(state)
     }
 }
 impl<T> core::fmt::Debug for Index<T> {
     #[inline]
-    fn fmt(&self, f : &mut core::fmt::Formatter) -> core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         self.as_untyped().fmt(f)
     }
 }
@@ -500,7 +509,7 @@ impl<T> Arena<T> {
     /// assert!(crew_members.next().is_none());
     /// ```
     pub fn retain(&mut self, mut predicate: impl FnMut(Index<T>, &T) -> bool) {
-        for i in 0..self.len {
+        for i in 0..self.items.len() {
             let remove = match &self.items[i] {
                 Entry::Occupied { generation, value } => {
                     let index = Index::new(i, *generation);
