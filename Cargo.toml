@@ -10,7 +10,7 @@ license = "MPL-2.0"
 name = "typed-generational-arena"
 readme = "./README.md"
 repository = "https://gitlab.com/tekne/typed-generational-arena"
-version = "0.2.5"
+version = "0.2.6"
 
 [dependencies]
 cfg-if = "0.1.5"
