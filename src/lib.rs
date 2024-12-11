@@ -146,7 +146,7 @@ typed-generational-arena = { version = "0.1", features = ["serde"] }
 
 #[macro_use]
 extern crate cfg_if;
-#[cfg(feature = "serde")]
+#[cfg(any(test, feature = "serde"))]
 extern crate serde;
 
 cfg_if! {
@@ -165,7 +165,7 @@ use core::mem;
 use core::ops;
 use core::slice;
 
-#[cfg(feature = "serde")]
+#[cfg(any(test, feature = "serde"))]
 mod serde_impl;
 
 /// The `Arena` allows inserting and removing elements that are referred to by

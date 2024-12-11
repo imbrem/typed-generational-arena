@@ -23,7 +23,11 @@ impl<'de, T> Deserialize<'de> for Index<T> {
         D: Deserializer<'de>,
     {
         let (index, generation) = Deserialize::deserialize(deserializer)?;
-        Ok(Index<T> { index, generation })
+        Ok(Index {
+            index,
+            generation,
+            _phantom: PhantomData,
+        })
     }
 }
 
