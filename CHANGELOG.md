@@ -1,3 +1,18 @@
+# 0.2.6
+
+Released 2024-12-11
+
+* Fixed a bug in `Arena::retain` where not every element was always considered for retention. 
+  Same as [https://github.com/fitzgen/generational-arena/pull/28](#28) upstream.
+* Removed `derivative` dependency
+* Bumped dependencies
+
+# 0.1.4
+
+* Backport fix to bug in `Arena::retain`.
+  Same as [https://github.com/fitzgen/generational-arena/pull/28](#28) upstream.
+* Bumped dependencies
+
 # 0.2.5
 
 Released 2019-08-02

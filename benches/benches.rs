@@ -2,18 +2,20 @@
 extern crate criterion;
 extern crate typed_generational_arena;
 
-use criterion::{Criterion, ParameterizedBenchmark, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput};
 use typed_generational_arena::{
-    StandardArena as Arena, StandardIndex as Index, SmallArena, SmallIndex
+    PtrSlab, PtrSlabIndex, SmallPtrSlab, SmallPtrSlabIndex, SmallSlab, SmallSlabIndex,
+    StandardSlab as Slab, StandardSlabIndex as SlabIndex,
 };
 use typed_generational_arena::{
-    StandardSlab as Slab, StandardSlabIndex as SlabIndex,
-    PtrSlab, PtrSlabIndex, SmallSlab, SmallSlabIndex, SmallPtrSlab, SmallPtrSlabIndex
+    SmallArena, SmallIndex, StandardArena as Arena, StandardIndex as Index,
 };
 
+#[allow(dead_code)]
 #[derive(Default)]
 struct Small(usize);
 
+#[allow(dead_code)]
 #[derive(Default)]
 struct Big([usize; 32]);
 
@@ -137,524 +139,474 @@ fn u32_ptr_slab_collect<T>(slab: &SmallPtrSlab<T>, n: usize) {
     }
 }
 
-
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "insert-small",
-            |b, n| b.iter(|| insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "insert-big",
-            |b, n| b.iter(|| insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "lookup-small",
-            |b, n| {
-                let mut small_arena = Arena::<Small>::new();
-                for _ in 0..1024 {
-                    small_arena.insert(Default::default());
-                }
-                let small_idx = small_arena.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| lookup(&small_arena, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_arena = Arena::<Small>::new();
+            for _ in 0..1024 {
+                small_arena.insert(Default::default());
+            }
+            let small_idx = small_arena.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| lookup(&small_arena, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "lookup-big",
-            |b, n| {
-                let mut big_arena = Arena::<Big>::new();
-                for _ in 0..1024 {
-                    big_arena.insert(Default::default());
-                }
-                let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| lookup(&big_arena, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_arena = Arena::<Big>::new();
+            for _ in 0..1024 {
+                big_arena.insert(Default::default());
+            }
+            let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| lookup(&big_arena, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "collect-small",
-            |b, n| {
-                let mut small_arena = Arena::<Small>::new();
-                for _ in 0..1024 {
-                    small_arena.insert(Default::default());
-                }
-                b.iter(|| collect(&small_arena, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_arena = Arena::<Small>::new();
+            for _ in 0..1024 {
+                small_arena.insert(Default::default());
+            }
+            b.iter(|| collect(&small_arena, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "collect-big",
-            |b, n| {
-                let mut big_arena = Arena::<Big>::new();
-                for _ in 0..1024 {
-                    big_arena.insert(Default::default());
-                }
-                b.iter(|| collect(&big_arena, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_arena = Arena::<Big>::new();
+            for _ in 0..1024 {
+                big_arena.insert(Default::default());
+            }
+            b.iter(|| collect(&big_arena, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "slab-insert-small",
-            |b, n| b.iter(|| slab_insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("slab-insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| slab_insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "slab-insert-big",
-            |b, n| b.iter(|| slab_insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("slab-insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| slab_insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "slab-lookup-small",
-            |b, n| {
-                let mut small_slab = Slab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| slab_lookup(&small_slab, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("slab-lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = Slab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| slab_lookup(&small_slab, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "slab-lookup-big",
-            |b, n| {
-                let mut big_slab = Slab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| slab_lookup(&big_slab, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("slab-lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = Slab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| slab_lookup(&big_slab, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "slab-collect-small",
-            |b, n| {
-                let mut small_slab = Slab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                b.iter(|| slab_collect(&small_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("slab-collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = Slab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            b.iter(|| slab_collect(&small_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "slab-collect-big",
-            |b, n| {
-                let mut big_slab = Slab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                b.iter(|| slab_collect(&big_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("slab-collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = Slab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            b.iter(|| slab_collect(&big_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "u32-insert-small",
-            |b, n| b.iter(|| u32_insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| u32_insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "u32-insert-big",
-            |b, n| b.iter(|| u32_insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| u32_insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "u32-lookup-small",
-            |b, n| {
-                let mut small_arena = SmallArena::<Small>::new();
-                for _ in 0..1024 {
-                    small_arena.insert(Default::default());
-                }
-                let small_idx = small_arena.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| u32_lookup(&small_arena, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_arena = SmallArena::<Small>::new();
+            for _ in 0..1024 {
+                small_arena.insert(Default::default());
+            }
+            let small_idx = small_arena.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| u32_lookup(&small_arena, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "u32-lookup-big",
-            |b, n| {
-                let mut big_arena = SmallArena::<Big>::new();
-                for _ in 0..1024 {
-                    big_arena.insert(Default::default());
-                }
-                let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| u32_lookup(&big_arena, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_arena = SmallArena::<Big>::new();
+            for _ in 0..1024 {
+                big_arena.insert(Default::default());
+            }
+            let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| u32_lookup(&big_arena, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "u32-collect-small",
-            |b, n| {
-                let mut small_arena = SmallArena::<Small>::new();
-                for _ in 0..1024 {
-                    small_arena.insert(Default::default());
-                }
-                b.iter(|| u32_collect(&small_arena, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_arena = SmallArena::<Small>::new();
+            for _ in 0..1024 {
+                small_arena.insert(Default::default());
+            }
+            b.iter(|| u32_collect(&small_arena, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "u32-collect-big",
-            |b, n| {
-                let mut big_arena = SmallArena::<Big>::new();
-                for _ in 0..1024 {
-                    big_arena.insert(Default::default());
-                }
-                b.iter(|| u32_collect(&big_arena, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_arena = SmallArena::<Big>::new();
+            for _ in 0..1024 {
+                big_arena.insert(Default::default());
+            }
+            b.iter(|| u32_collect(&big_arena, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "u32-slab-insert-small",
-            |b, n| b.iter(|| u32_slab_insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-slab-insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| u32_slab_insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "u32-slab-insert-big",
-            |b, n| b.iter(|| u32_slab_insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-slab-insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| u32_slab_insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "u32-slab-lookup-small",
-            |b, n| {
-                let mut small_slab = SmallSlab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| u32_slab_lookup(&small_slab, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-slab-lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = SmallSlab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| u32_slab_lookup(&small_slab, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "u32-slab-lookup-big",
-            |b, n| {
-                let mut big_slab = SmallSlab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| u32_slab_lookup(&big_slab, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-slab-lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = SmallSlab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| u32_slab_lookup(&big_slab, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "u32-slab-collect-small",
-            |b, n| {
-                let mut small_slab = SmallSlab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                b.iter(|| u32_slab_collect(&small_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-slab-collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = SmallSlab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            b.iter(|| u32_slab_collect(&small_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "u32-slab-collect-big",
-            |b, n| {
-                let mut big_slab = SmallSlab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                b.iter(|| u32_slab_collect(&big_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-slab-collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = SmallSlab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            b.iter(|| u32_slab_collect(&big_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "ptr-slab-insert-small",
-            |b, n| b.iter(|| ptr_slab_insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("ptr-slab-insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| ptr_slab_insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "ptr-slab-insert-big",
-            |b, n| b.iter(|| ptr_slab_insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("ptr-slab-insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| ptr_slab_insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "ptr-slab-lookup-small",
-            |b, n| {
-                let mut small_slab = PtrSlab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| ptr_slab_lookup(&small_slab, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("ptr-slab-lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = PtrSlab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| ptr_slab_lookup(&small_slab, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "ptr-slab-lookup-big",
-            |b, n| {
-                let mut big_slab = PtrSlab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| ptr_slab_lookup(&big_slab, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("ptr-slab-lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = PtrSlab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| ptr_slab_lookup(&big_slab, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "ptr-slab-collect-small",
-            |b, n| {
-                let mut small_slab = PtrSlab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                b.iter(|| ptr_slab_collect(&small_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("ptr-slab-collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = PtrSlab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            b.iter(|| ptr_slab_collect(&small_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "ptr-slab-collect-big",
-            |b, n| {
-                let mut big_slab = PtrSlab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                b.iter(|| ptr_slab_collect(&big_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("ptr-slab-collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = PtrSlab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            b.iter(|| ptr_slab_collect(&big_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "u32-ptr-slab-insert-small",
-            |b, n| b.iter(|| u32_ptr_slab_insert::<Small>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-ptr-slab-insert-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| u32_ptr_slab_insert::<Small>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "insert",
-        ParameterizedBenchmark::new(
-            "u32-ptr-slab-insert-big",
-            |b, n| b.iter(|| u32_ptr_slab_insert::<Big>(*n)),
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-ptr-slab-insert-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            b.iter(|| u32_ptr_slab_insert::<Big>(*n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "u32-ptr-slab-lookup-small",
-            |b, n| {
-                let mut small_slab = SmallPtrSlab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| u32_ptr_slab_lookup(&small_slab, small_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-ptr-slab-lookup-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = SmallPtrSlab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            let small_idx = small_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| u32_ptr_slab_lookup(&small_slab, small_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "lookup",
-        ParameterizedBenchmark::new(
-            "u32-ptr-slab-lookup-big",
-            |b, n| {
-                let mut big_slab = SmallPtrSlab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
-                b.iter(|| u32_ptr_slab_lookup(&big_slab, big_idx, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-ptr-slab-lookup-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = SmallPtrSlab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            let big_idx = big_slab.iter().map(|pair| pair.0).next().unwrap();
+            b.iter(|| u32_ptr_slab_lookup(&big_slab, big_idx, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "u32-ptr-slab-collect-small",
-            |b, n| {
-                let mut small_slab = SmallPtrSlab::<Small>::new();
-                for _ in 0..1024 {
-                    small_slab.insert(Default::default());
-                }
-                b.iter(|| u32_ptr_slab_collect(&small_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
+    let mut group = c.benchmark_group("u32-ptr-slab-collect-small");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut small_slab = SmallPtrSlab::<Small>::new();
+            for _ in 0..1024 {
+                small_slab.insert(Default::default());
+            }
+            b.iter(|| u32_ptr_slab_collect(&small_slab, *n))
+        });
+    }
+    group.finish();
 
-    c.bench(
-        "collect",
-        ParameterizedBenchmark::new(
-            "u32-ptr-slab-collect-big",
-            |b, n| {
-                let mut big_slab = SmallPtrSlab::<Big>::new();
-                for _ in 0..1024 {
-                    big_slab.insert(Default::default());
-                }
-                b.iter(|| u32_ptr_slab_collect(&big_slab, *n))
-            },
-            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
-        )
-        .throughput(|n| Throughput::Elements(*n as u32)),
-    );
-
+    let mut group = c.benchmark_group("u32-ptr-slab-collect-big");
+    for n in 1..3 {
+        let n = n * 100;
+        group.throughput(Throughput::Elements(n as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, n| {
+            let mut big_slab = SmallPtrSlab::<Big>::new();
+            for _ in 0..1024 {
+                big_slab.insert(Default::default());
+            }
+            b.iter(|| u32_ptr_slab_collect(&big_slab, *n))
+        });
+    }
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

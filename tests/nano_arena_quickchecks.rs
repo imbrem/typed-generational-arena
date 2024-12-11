@@ -105,10 +105,10 @@ quickcheck! {
     fn iter_mut(elems: BTreeSet<usize>) -> bool {
         let mut arena = Arena::from_iter(elems.iter().take(std::u8::MAX as usize).cloned());
         for (_, value) in &mut arena {
-            *value += 1;
+            *value = value.wrapping_add(1);
         }
         arena.iter().all(|(idx, value)| {
-            let orig_value = value - 1;
+            let orig_value = value.wrapping_sub(1);
             elems.contains(&orig_value) && arena.get(idx) == Some(value)
         })
     }
