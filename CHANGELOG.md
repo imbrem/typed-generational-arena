@@ -1,3 +1,11 @@
+# 0.2.7
+
+Released 2025-03-30
+
+* Added `Default` impl for `Arena<T, I, G>`
+* Added `Hash` impl for `NonzeroGeneration<T>` and `NonzeroWrapGeneration<T>`
+* Set Rust edition to 2015
+
 # 0.2.6
 
 Released 2024-12-11
