@@ -199,7 +199,7 @@ pub trait GenerationalIndex: FixedGenerationalIndex {
 }
 
 /// A generation counter which is always nonzero. Useful for size optimizations on Option<Index>
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NonzeroGeneration<T: NonZeroAble> {
     gen: T::NonZero,
@@ -245,7 +245,7 @@ where
 
 /// A wrapping generation counter which is always nonzero.
 /// Useful for size optimizations on Option<Index>
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NonzeroWrapGeneration<T: NonZeroAble> {
     gen: T::NonZero,
@@ -412,6 +412,12 @@ pub struct Arena<T, I = usize, G = usize> {
     generation: G,
     len: usize,
     free_list_head: Option<I>,
+}
+
+impl<T, I: ArenaIndex, G: FixedGenerationalIndex> Default for Arena<T, I, G> {
+    fn default() -> Self {
+        Arena::new()
+    }
 }
 
 #[derive(Clone, Debug)]
