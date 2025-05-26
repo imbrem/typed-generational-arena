@@ -1,3 +1,9 @@
+# 0.2.8
+
+Released 2025-05-26
+
+* Added `get_idx` function to get an index from an offset into the arena
+
 # 0.2.7
 
 Released 2025-03-30

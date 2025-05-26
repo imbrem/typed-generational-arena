@@ -1074,6 +1074,26 @@ impl<T, I: ArenaIndex, G: FixedGenerationalIndex> Arena<T, I, G> {
             inner: self.items.drain(..).enumerate(),
         }
     }
+
+    /// If an integer index is valid, returns it as a generational index
+    ///
+    /// # Examples
+    /// ```
+    /// use typed_generational_arena::StandardArena;
+    ///
+    /// let mut arena = StandardArena::new();
+    /// assert_eq!(arena.get_idx(0), None);
+    /// let ix = arena.insert(4);
+    /// assert_eq!(arena.get_idx(0), Some(ix));
+    /// arena.remove(ix);
+    /// assert_eq!(arena.get_idx(0), None);
+    /// ```
+    pub fn get_idx(&self, i: I) -> Option<Index<T, I, G>> {
+        match self.items.get(i.to_idx()) {
+            Some(Entry::Occupied { generation, .. }) => Some(Index::new(i, *generation)),
+            _ => None,
+        }
+    }
 }
 
 impl<T, I: ArenaIndex, G: GenerationalIndex> Arena<T, I, G> {
