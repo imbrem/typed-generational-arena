@@ -199,10 +199,27 @@ pub trait GenerationalIndex: FixedGenerationalIndex {
 }
 
 /// A generation counter which is always nonzero. Useful for size optimizations on Option<Index>
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NonzeroGeneration<T: NonZeroAble> {
     gen: T::NonZero,
+}
+
+impl<T> NonzeroGeneration<T>
+where
+    T: NonZeroAble + From<<<T as NonZeroAble>::NonZero as NonZero>::Primitive>,
+{
+    /// Get this generation as an index
+    #[inline(always)]
+    pub fn to_idx(self) -> T {
+        T::from(self.gen.get())
+    }
+
+    /// Attempt to construct a generation from an index
+    #[inline(always)]
+    pub fn from_idx(ix: T) -> Option<Self> {
+        ix.as_nonzero().map(|gen| NonzeroGeneration { gen })
+    }
 }
 
 impl<T> FixedGenerationalIndex for NonzeroGeneration<T>

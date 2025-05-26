@@ -1,3 +1,9 @@
+# 0.2.9
+
+Released 2025-05-26
+
+* Added `to_idx`, `from_idx`, and `Default` to `NonzeroGeneration`
+
 # 0.2.8
 
 Released 2025-05-26
