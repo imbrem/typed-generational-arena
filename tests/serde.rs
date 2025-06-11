@@ -1,14 +1,14 @@
 #![cfg(feature = "serde")]
 
-extern crate typed_generational_arena;
-extern crate serde;
 extern crate bincode;
+extern crate serde;
 extern crate serde_test;
+extern crate typed_generational_arena;
 
-use typed_generational_arena::{U64Arena as Arena, U64Index as Index};
 use serde::{Deserialize, Serialize};
 use serde_test::{assert_ser_tokens, Token};
 use std::fmt::Debug;
+use typed_generational_arena::{U64Arena as Arena, U64Index as Index};
 
 #[test]
 fn deserialized_arena_holds_same_values_with_original_arena() {
@@ -47,7 +47,8 @@ fn deserialized_index_can_be_used_in_the_same_way_as_original_index() {
 
     for idx in &[a, b0, b1, c, d] {
         let bytes = bincode::serialize(&idx).expect("index must be serialized");
-        let de_idx = bincode::deserialize::<Index<&'static str>>(&bytes).expect("index must be deserialized");
+        let de_idx = bincode::deserialize::<Index<&'static str>>(&bytes)
+            .expect("index must be deserialized");
         assert_eq!(arena.get(*idx), arena.get(de_idx));
     }
 }

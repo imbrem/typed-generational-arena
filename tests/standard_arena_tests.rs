@@ -1,6 +1,6 @@
 extern crate typed_generational_arena;
-use typed_generational_arena::StandardArena as Arena;
 use std::collections::BTreeSet;
+use typed_generational_arena::StandardArena as Arena;
 
 #[test]
 fn can_get_live_value() {

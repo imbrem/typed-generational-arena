@@ -2,9 +2,9 @@ extern crate typed_generational_arena;
 #[macro_use]
 extern crate quickcheck;
 
-use typed_generational_arena::NanoArena as Arena;
 use std::collections::BTreeSet;
 use std::iter::FromIterator;
+use typed_generational_arena::NanoArena as Arena;
 
 quickcheck! {
     fn always_contains_inserted_elements(elems: Vec<usize>) -> bool {
