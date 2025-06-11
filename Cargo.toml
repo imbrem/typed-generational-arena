@@ -9,7 +9,7 @@ keywords = ["generation", "index", "arena", "ecs"]
 license = "MPL-2.0"
 name = "typed-generational-arena"
 readme = "./README.md"
-repository = "https://gitlab.com/tekne/typed-generational-arena"
+repository = "https://github.com/imbrem/typed-generational-arena"
 version = "0.2.9"
 edition = "2015"
 
