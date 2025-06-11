@@ -108,7 +108,7 @@ fn index_deleted_item() {
     let mut arena = Arena::new();
     let idx = arena.insert(42);
     arena.remove(idx);
-    arena[idx];
+    _ = arena[idx];
 }
 
 #[test]
