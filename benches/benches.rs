@@ -2,6 +2,8 @@
 extern crate criterion;
 extern crate typed_generational_arena;
 
+use std::hint::black_box;
+
 use criterion::{BenchmarkId, Criterion, Throughput};
 use typed_generational_arena::{
     PtrSlab, PtrSlabIndex, SmallPtrSlab, SmallPtrSlabIndex, SmallSlab, SmallSlabIndex,
@@ -23,19 +25,19 @@ fn insert<T: Default>(n: usize) {
     let mut arena = Arena::<T>::new();
     for _ in 0..n {
         let idx = arena.insert(Default::default());
-        criterion::black_box(idx);
+        black_box(idx);
     }
 }
 
 fn lookup<T>(arena: &Arena<T>, idx: Index<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(&arena[idx]);
+        black_box(&arena[idx]);
     }
 }
 
 fn collect<T>(arena: &Arena<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(arena.iter().collect::<Vec<_>>());
+        black_box(arena.iter().collect::<Vec<_>>());
     }
 }
 
@@ -43,19 +45,19 @@ fn u32_insert<T: Default>(n: usize) {
     let mut arena = SmallArena::<T>::new();
     for _ in 0..n {
         let idx = arena.insert(Default::default());
-        criterion::black_box(idx);
+        black_box(idx);
     }
 }
 
 fn u32_lookup<T>(arena: &SmallArena<T>, idx: SmallIndex<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(&arena[idx]);
+        black_box(&arena[idx]);
     }
 }
 
 fn u32_collect<T>(arena: &SmallArena<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(arena.iter().collect::<Vec<_>>());
+        black_box(arena.iter().collect::<Vec<_>>());
     }
 }
 
@@ -63,19 +65,19 @@ fn slab_insert<T: Default>(n: usize) {
     let mut slab = Slab::<T>::new();
     for _ in 0..n {
         let idx = slab.insert(Default::default());
-        criterion::black_box(idx);
+        black_box(idx);
     }
 }
 
 fn slab_lookup<T>(slab: &Slab<T>, idx: SlabIndex<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(&slab[idx]);
+        black_box(&slab[idx]);
     }
 }
 
 fn slab_collect<T>(slab: &Slab<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(slab.iter().collect::<Vec<_>>());
+        black_box(slab.iter().collect::<Vec<_>>());
     }
 }
 
@@ -83,19 +85,19 @@ fn u32_slab_insert<T: Default>(n: usize) {
     let mut slab = SmallSlab::<T>::new();
     for _ in 0..n {
         let idx = slab.insert(Default::default());
-        criterion::black_box(idx);
+        black_box(idx);
     }
 }
 
 fn u32_slab_lookup<T>(slab: &SmallSlab<T>, idx: SmallSlabIndex<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(&slab[idx]);
+        black_box(&slab[idx]);
     }
 }
 
 fn u32_slab_collect<T>(slab: &SmallSlab<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(slab.iter().collect::<Vec<_>>());
+        black_box(slab.iter().collect::<Vec<_>>());
     }
 }
 
@@ -103,19 +105,19 @@ fn ptr_slab_insert<T: Default>(n: usize) {
     let mut slab = PtrSlab::<T>::new();
     for _ in 0..n {
         let idx = slab.insert(Default::default());
-        criterion::black_box(idx);
+        black_box(idx);
     }
 }
 
 fn ptr_slab_lookup<T>(slab: &PtrSlab<T>, idx: PtrSlabIndex<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(&slab[idx]);
+        black_box(&slab[idx]);
     }
 }
 
 fn ptr_slab_collect<T>(slab: &PtrSlab<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(slab.iter().collect::<Vec<_>>());
+        black_box(slab.iter().collect::<Vec<_>>());
     }
 }
 
@@ -123,19 +125,19 @@ fn u32_ptr_slab_insert<T: Default>(n: usize) {
     let mut slab = SmallPtrSlab::<T>::new();
     for _ in 0..n {
         let idx = slab.insert(Default::default());
-        criterion::black_box(idx);
+        black_box(idx);
     }
 }
 
 fn u32_ptr_slab_lookup<T>(slab: &SmallPtrSlab<T>, idx: SmallPtrSlabIndex<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(&slab[idx]);
+        black_box(&slab[idx]);
     }
 }
 
 fn u32_ptr_slab_collect<T>(slab: &SmallPtrSlab<T>, n: usize) {
     for _ in 0..n {
-        criterion::black_box(slab.iter().collect::<Vec<_>>());
+        black_box(slab.iter().collect::<Vec<_>>());
     }
 }
 
