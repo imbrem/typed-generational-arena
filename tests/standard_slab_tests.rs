@@ -1,6 +1,6 @@
 extern crate typed_generational_arena;
-use typed_generational_arena::StandardSlab as Slab;
 use std::collections::BTreeSet;
+use typed_generational_arena::StandardSlab as Slab;
 
 #[test]
 fn can_get_live_value() {
@@ -61,7 +61,6 @@ fn into_iter() {
     assert!(set.contains(&2));
 }
 
-
 #[test]
 fn out_of_bounds_get_with_index_from_other_slab() {
     let mut slab1 = Slab::with_capacity(1);
@@ -70,7 +69,6 @@ fn out_of_bounds_get_with_index_from_other_slab() {
     let idx = slab1.insert(42);
     assert!(slab2.get(idx).is_none());
 }
-
 
 #[test]
 fn out_of_bounds_get2_mut_with_index_from_other_slab() {

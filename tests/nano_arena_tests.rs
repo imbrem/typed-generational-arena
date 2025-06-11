@@ -1,6 +1,6 @@
 extern crate typed_generational_arena;
-use typed_generational_arena::NanoArena as Arena;
 use std::collections::BTreeSet;
+use typed_generational_arena::NanoArena as Arena;
 
 #[test]
 fn can_get_live_value() {
@@ -39,7 +39,7 @@ fn try_insert_when_full() {
 #[test]
 fn insert_many_and_cause_doubling() {
     let mut arena = Arena::new();
-    // We can't hold more than `std::u8::MAX` items, so this was reduced from 1000 to 255.
+    // We can't hold more than `u8::MAX` items, so this was reduced from 1000 to 255.
     let indices: Vec<_> = (0..255).map(|i| arena.insert(i * i)).collect();
     for (i, idx) in indices.iter().cloned().enumerate() {
         assert_eq!(arena.remove(idx).unwrap(), i * i);
@@ -109,7 +109,7 @@ fn index_deleted_item() {
     let mut arena = Arena::new();
     let idx = arena.insert(42);
     arena.remove(idx);
-    arena[idx];
+    _ = arena[idx];
 }
 
 #[test]

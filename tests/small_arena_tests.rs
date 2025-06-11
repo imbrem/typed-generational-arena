@@ -1,6 +1,6 @@
 extern crate typed_generational_arena;
-use typed_generational_arena::SmallArena as Arena;
 use std::collections::BTreeSet;
+use typed_generational_arena::SmallArena as Arena;
 
 #[test]
 fn can_get_live_value() {
@@ -108,7 +108,7 @@ fn index_deleted_item() {
     let mut arena = Arena::new();
     let idx = arena.insert(42);
     arena.remove(idx);
-    arena[idx];
+    _ = arena[idx];
 }
 
 #[test]

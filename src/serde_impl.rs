@@ -1,4 +1,4 @@
-use super::{Arena, GenerationalIndex, ArenaIndex, Entry, Vec, DEFAULT_CAPACITY};
+use super::{Arena, ArenaIndex, Entry, GenerationalIndex, Vec, DEFAULT_CAPACITY};
 use core::fmt;
 use core::iter;
 use core::marker::PhantomData;
@@ -9,7 +9,7 @@ impl<T, I, G> Serialize for Arena<T, I, G>
 where
     T: Serialize,
     I: ArenaIndex,
-    G: GenerationalIndex + Serialize
+    G: GenerationalIndex + Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -24,12 +24,11 @@ where
     }
 }
 
-impl<'de, T, I, G> Deserialize<'de>
-for Arena<T, I, G>
+impl<'de, T, I, G> Deserialize<'de> for Arena<T, I, G>
 where
     T: Deserialize<'de>,
     I: ArenaIndex,
-    G: GenerationalIndex + Deserialize<'de>
+    G: GenerationalIndex + Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -55,7 +54,7 @@ impl<'de, T, I, G> Visitor<'de> for ArenaVisitor<T, I, G>
 where
     T: Deserialize<'de>,
     I: ArenaIndex,
-    G: GenerationalIndex + Deserialize<'de>
+    G: GenerationalIndex + Deserialize<'de>,
 {
     type Value = Arena<T, I, G>;
 
@@ -73,10 +72,14 @@ where
         let mut generation = G::first_generation();
         while let Some(element) = access.next_element::<Option<(G, T)>>()? {
             let item = match element {
-                Some((gen, value)) => {
-                    generation = if generation.generation_lt(&gen) { gen } else { generation };
+                Some((gen_value, value)) => {
+                    generation = if generation.generation_lt(&gen_value) {
+                        gen_value
+                    } else {
+                        generation
+                    };
                     Entry::Occupied {
-                        generation: gen,
+                        generation: gen_value,
                         value,
                     }
                 }

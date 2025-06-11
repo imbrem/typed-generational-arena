@@ -218,7 +218,7 @@ where
     /// Attempt to construct a generation from an index
     #[inline(always)]
     pub fn from_idx(ix: T) -> Option<Self> {
-        ix.as_nonzero().map(|gen| NonzeroGeneration { gen })
+        ix.into_nonzero().map(|gen| NonzeroGeneration { gen })
     }
 }
 
@@ -235,7 +235,7 @@ where
     #[inline(always)]
     fn first_generation() -> Self {
         NonzeroGeneration {
-            gen: T::one().as_nonzero().unwrap(),
+            gen: T::one().into_nonzero().unwrap(),
         }
     }
     #[inline(always)]
@@ -256,7 +256,7 @@ where
 {
     #[inline(always)]
     fn increment_generation(&mut self) {
-        self.gen = (T::from(self.gen.get()) + T::one()).as_nonzero().unwrap()
+        self.gen = (T::from(self.gen.get()) + T::one()).into_nonzero().unwrap()
     }
 }
 
@@ -282,7 +282,7 @@ where
     #[inline(always)]
     fn first_generation() -> Self {
         NonzeroWrapGeneration {
-            gen: T::one().as_nonzero().unwrap(),
+            gen: T::one().into_nonzero().unwrap(),
         }
     }
     #[inline(always)]
@@ -308,7 +308,7 @@ where
         self.gen = if T::zero() == new {
             Self::first_generation().gen
         } else {
-            new.as_nonzero().unwrap()
+            new.into_nonzero().unwrap()
         }
     }
 }
@@ -409,7 +409,7 @@ where
     #[inline(always)]
     fn from_idx(idx: usize) -> Self {
         NonZeroIndex {
-            idx: T::from_usize(idx + 1).unwrap().as_nonzero().unwrap(),
+            idx: T::from_usize(idx + 1).unwrap().into_nonzero().unwrap(),
         }
     }
     #[inline(always)]
@@ -543,8 +543,8 @@ impl<T, I: ArenaIndex, G: FixedGenerationalIndex> Index<T, I, G> {
     #[inline]
     pub fn new(index: I, generation: G) -> Index<T, I, G> {
         Index {
-            index: index,
-            generation: generation,
+            index,
+            generation,
             _phantom: std::marker::PhantomData,
         }
     }

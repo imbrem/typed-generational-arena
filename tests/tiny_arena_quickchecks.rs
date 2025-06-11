@@ -2,16 +2,16 @@ extern crate typed_generational_arena;
 #[macro_use]
 extern crate quickcheck;
 
-use typed_generational_arena::TinyArena as Arena;
 use std::collections::BTreeSet;
 use std::iter::FromIterator;
+use typed_generational_arena::TinyArena as Arena;
 
 quickcheck! {
     fn always_contains_inserted_elements(elems: Vec<usize>) -> bool {
         let mut arena = Arena::new();
         let mut elems = elems;
         // Avoid overflow
-        elems.truncate((std::u16::MAX - 1) as usize);
+        elems.truncate((u16::MAX - 1) as usize);
         let indices: Vec<_> = elems.into_iter().map(|e| arena.insert(e)).collect();
         indices.into_iter().all(|i| arena.contains(i))
     }
@@ -22,7 +22,7 @@ quickcheck! {
         let mut arena = Arena::new();
         let mut elems = elems;
         // Avoid overflow
-        elems.truncate((std::u16::MAX - 1) as usize);
+        elems.truncate((u16::MAX - 1) as usize);
         let indices: Vec<_> = elems.into_iter().map(|e| arena.insert(e)).collect();
         for i in indices.iter().cloned() {
             arena.remove(i).unwrap();
@@ -36,7 +36,7 @@ quickcheck! {
         let mut arena = Arena::new();
         let mut elems = elems;
         // Avoid overflow
-        elems.truncate((std::u16::MAX - 1) as usize);
+        elems.truncate((u16::MAX - 1) as usize);
 
         let indices: Vec<_> = elems.iter().cloned().map(|e| arena.insert(e)).collect();
         for (i, idx) in indices.iter().cloned().enumerate() {
@@ -57,7 +57,7 @@ quickcheck! {
         let mut arena = Arena::new();
         let mut ops = ops;
         // Avoid overflow
-        ops.truncate((std::u16::MAX - 1) as usize);
+        ops.truncate((u16::MAX - 1) as usize);
         let mut live_indices = vec![];
         let mut dead_indices = vec![];
 
@@ -94,7 +94,7 @@ quickcheck! {
 
 quickcheck! {
     fn iter(elems: BTreeSet<usize>) -> bool {
-        let arena = Arena::from_iter(elems.iter().take((std::u16::MAX - 1) as usize).cloned());
+        let arena = Arena::from_iter(elems.iter().take((u16::MAX - 1) as usize).cloned());
         arena.iter().all(|(idx, value)| {
             elems.contains(value) && arena.get(idx) == Some(value)
         })
@@ -103,7 +103,7 @@ quickcheck! {
 
 quickcheck! {
     fn iter_mut(elems: BTreeSet<usize>) -> bool {
-        let mut arena = Arena::from_iter(elems.iter().take((std::u16::MAX - 1) as usize).cloned());
+        let mut arena = Arena::from_iter(elems.iter().take((u16::MAX - 1) as usize).cloned());
         for (_, value) in &mut arena {
             *value = value.wrapping_add(1);
         }
@@ -116,7 +116,7 @@ quickcheck! {
 
 quickcheck! {
     fn from_iter_into_iter(elems: BTreeSet<usize>) -> bool {
-        let arena = Arena::from_iter(elems.iter().take((std::u16::MAX - 1) as usize).cloned());
+        let arena = Arena::from_iter(elems.iter().take((u16::MAX - 1) as usize).cloned());
         arena.into_iter().collect::<BTreeSet<_>>() == elems
     }
 }

@@ -1,11 +1,11 @@
-use super::{Arena, Index, NonzeroGeneration, NonzeroWrapGeneration, NonZeroIndex, DisableRemoval};
+use super::{Arena, DisableRemoval, Index, NonZeroIndex, NonzeroGeneration, NonzeroWrapGeneration};
 
 /// An arena of `T` indexed by `usize`, with `2^{64}` generations
 pub type U64Arena<T> = Arena<T, usize, u64>;
 /// An index into a `U64Arena`
 pub type U64Index<T> = Index<T, usize, u64>;
 /// A standard arena of `T` indexed by `usize`, with `2^{64} - 1` generations
-pub type StandardArena<T> =  Arena<T, usize, NonzeroGeneration<usize>>;
+pub type StandardArena<T> = Arena<T, usize, NonzeroGeneration<usize>>;
 /// A typed index into a `StandardArena`
 pub type StandardIndex<T> = Index<T, usize, NonzeroGeneration<usize>>;
 /// An arena which can only hold up to \(2^{32} - 1\) elements and generations
